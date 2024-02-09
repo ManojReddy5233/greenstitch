@@ -35,25 +35,15 @@ class ParkingLot{
         }
         color = color.toUpperCase();
         slots.remove(slot);
-        //if(!slotsOfCar.containsKey(registerPlateNo)) slotsOfCar.put(registerPlateNo, new ArrayList<>());
-        HashSet<Integer> curCarSlotsList = new HashSet<>();
-        if(slotsOfCar.get(registerPlateNo)!=null){
-            curCarSlotsList = slotsOfCar.get(registerPlateNo);
-        }else{
-            //first time car
-            HashSet<String> carsOfCurrColor = new HashSet<>();
-            if(carsOfColor.containsKey(color)) carsOfCurrColor = carsOfColor.get(color);
-            carsOfCurrColor.add(registerPlateNo);
-            carsOfColor.put(color, carsOfCurrColor);
-        }
-        HashSet<Integer>  slotsOfCurColor = new HashSet<>();
-        if(slotsOfColor.containsKey(color)) slotsOfCurColor = slotsOfColor.get(color);
-//        System.out.println("slotsOfCurColor: "+slotsOfCurColor);
-//        System.out.println("slot: "+slot);
+        HashSet<Integer> slotsOfCurCar = slotsOfCar.getOrDefault(registerPlateNo, new HashSet<>());
+        slotsOfCurCar.add(slot);
+        slotsOfCar.put(registerPlateNo, slotsOfCurCar);
+        HashSet<String> carsOfCurColor = carsOfColor.getOrDefault(color, new HashSet<>());
+        carsOfCurColor.add(registerPlateNo);
+        carsOfColor.put(color, carsOfCurColor);
+        HashSet<Integer> slotsOfCurColor = slotsOfColor.getOrDefault(color, new HashSet<>());
         slotsOfCurColor.add(slot);
         slotsOfColor.put(color, slotsOfCurColor);
-        curCarSlotsList.add(slot);
-        slotsOfCar.put(registerPlateNo, curCarSlotsList);
         status.put(slot, registerPlateNo+"         "+color);
         System.out.println("Allocated slot number: "+slot);
     }
@@ -82,8 +72,6 @@ class ParkingLot{
 
     public void printNumberPlatesWithColor(String color){
         color = color.toUpperCase();
-//        System.out.println(color);
-//        System.out.println("carsOfColor: "+carsOfColor);
 
         if(!carsOfColor.containsKey(color)){
             System.out.println("No Car of This Color is Present in Our Parkinglot");
@@ -102,8 +90,6 @@ class ParkingLot{
 
     public void printSlotsWithCarColor(String color){
         color = color.toUpperCase();
-//        System.out.println(color);
-//        System.out.println("slotsOfColor: "+slotsOfColor);
 
         if(!slotsOfColor.containsKey(color)){
             System.out.println("No Car of this Color: " + color +" is parked with us");
@@ -256,35 +242,60 @@ public class ParkingTicketSystem{
 
 
 
+//below is the demo output
 
 
-//    $ create_parking_lot 6
-//        Created a parking lot with 6 slots
-//        $ park KA-01-HH-1234 White
-//        Allocated slot number: 1
-//        $ park KA-01-HH-9999 White
-//        Allocated slot number: 2
-//            $ park KA-01-BB-0001 Black
-//        Allocated slot number: 3
-//        $ park KA-01-HH-7777 Red
-//        Allocated slot number: 4
-//        $ park KA-01-HH-2701 Blue
-//        Allocated slot number: 5
-//        $ park KA-01-HH-3141 Black
-//        Allocated slot number: 6
-//        $ leave 4
-//        Slot number 4 is free
-//        $ status
-//        Slot No. Registration No Colour
-//        1 KA-01-HH-1234 White
-//        2 KA-01-HH-9999 White
-//        3 KA-01-BB-0001 Black
-//        5 KA-01-HH-2701 Blue
-//        6 KA-01-HH-3141 Black
-//        $ park KA-01-P-333 White
-//        Allocated slot number: 4
-//        $ park DL-12-AA-9999 White
-//        Sorry, parking lot is full
-//        $ registration_numbers_for_cars_with_colour White KA-01-HH-1234, KA-01-HH-9999, KA-01-P-333
-//        $ exit
-
+// Welcome Admin
+// create_parking_lot 6
+// You are in parkinglot of capacity: 6
+// PLEASE ENTER THE COMMAND
+// park KA-01-HH-1234 White
+// Allocated slot number: 1
+// PLEASE ENTER THE COMMAND
+// park KA-01-HH-9999 White
+// Allocated slot number: 2
+// PLEASE ENTER THE COMMAND
+// park KA-01-BB-0001 Black
+// Allocated slot number: 3
+// PLEASE ENTER THE COMMAND
+// park KA-01-HH-7777 Red
+// Allocated slot number: 4
+// PLEASE ENTER THE COMMAND
+// park KA-01-HH-2701 Blue
+// Allocated slot number: 5
+// PLEASE ENTER THE COMMAND
+// park KA-01-HH-3141 Black
+// Allocated slot number: 6
+// PLEASE ENTER THE COMMAND
+// leave 4
+// Slot number 4 is free
+// PLEASE ENTER THE COMMAND
+// status
+// Slot     Registration No   Colour
+// 1   KA-01-HH-1234         WHITE
+// 2   KA-01-HH-9999         WHITE
+// 3   KA-01-BB-0001         BLACK
+// 5   KA-01-HH-2701         BLUE
+// 6   KA-01-HH-3141         BLACK
+// PLEASE ENTER THE COMMAND
+// park KA-01-P-333 White
+// Allocated slot number: 4
+// PLEASE ENTER THE COMMAND
+//  park DL-12-AA-9999 White
+// Sorry, parking lot is full
+// PLEASE ENTER THE COMMAND
+// registration_numbers_for_cars_with_colour White
+// KA-01-HH-1234
+// KA-01-HH-9999
+// KA-01-P-333
+// PLEASE ENTER THE COMMAND
+// registration_numbers_for_cars_with_colour Whitesds
+// No Car of This Color is Present in Our Parkinglot
+// PLEASE ENTER THE COMMAND
+// SLOTS_ALLOTED_TO_CARS_WITH_COLOUR white
+// [1, 2, 4]
+// PLEASE ENTER THE COMMAND
+// SLOTS_ALLOTED_TO_CAR_WITH_REGISTRATIONNO KA-01-P-333
+// [4]
+// PLEASE ENTER THE COMMAND
+// exit

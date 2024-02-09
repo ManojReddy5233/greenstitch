@@ -5,21 +5,35 @@ class Car{
     private String registrationNo;
     private String colour;
     private Integer slot;
+
+    public Car(String registrationNo, String colour, Integer slot){
+        this.registrationNo = registrationNo;
+        this.colour = colour;
+        this.slot = slot;
+    }
+
+    public Integer getSlot(){
+        return this.slot;
+    }
+
+    public void setSlot(Integer slot){
+        this.slot = slot;
+    }
 }
-class ParkingLot{
+class ParkingLotV2{
     private final int capacity;
     private TreeSet<Integer> slots;
     private HashMap<Integer, String> status;
-    private HashMap<String, Car> Cars;
+    private HashMap<String, Car> cars;
     private HashMap<String, HashSet<String>> carsOfColor;  //stores all cars register no of a given color
     private HashMap<String, HashSet<Integer>> slotsOfColor;  //stores all slots againsr a given color
 
-    public ParkingLot(int capacity){
+    public ParkingLotV2(int capacity){
         this.capacity = capacity;
         this.slots = IntStream.rangeClosed(1, capacity+1)
                 .boxed()
                 .collect(Collectors.toCollection(TreeSet::new));
-        this.Cars = new HashMap<>();
+        this.cars = new HashMap<>();
         this.carsOfColor = new HashMap<>();
         this.slotsOfColor = new HashMap<>();
         this.status = new HashMap<>();
@@ -39,25 +53,13 @@ class ParkingLot{
         }
         color = color.toUpperCase();
         slots.remove(slot);
-        //if(!slotsOfCar.containsKey(registerPlateNo)) slotsOfCar.put(registerPlateNo, new ArrayList<>());
-        HashSet<Integer> curCarSlotsList = new HashSet<>();
-        if(slotsOfCar.get(registerPlateNo)!=null){
-            curCarSlotsList = slotsOfCar.get(registerPlateNo);
-        }else{
-            //first time car
-            HashSet<String> carsOfCurrColor = new HashSet<>();
-            if(carsOfColor.containsKey(color)) carsOfCurrColor = carsOfColor.get(color);
-            carsOfCurrColor.add(registerPlateNo);
-            carsOfColor.put(color, carsOfCurrColor);
-        }
-        HashSet<Integer>  slotsOfCurColor = new HashSet<>();
-        if(slotsOfColor.containsKey(color)) slotsOfCurColor = slotsOfColor.get(color);
-//        System.out.println("slotsOfCurColor: "+slotsOfCurColor);
-//        System.out.println("slot: "+slot);
+        cars.put(registerPlateNo, new Car(registerPlateNo, color, slot));
+        HashSet<String> carsOfCurColor = carsOfColor.getOrDefault(color, new HashSet<>());
+        carsOfCurColor.add(registerPlateNo);
+        carsOfColor.put(color, carsOfCurColor);
+        HashSet<Integer> slotsOfCurColor = slotsOfColor.getOrDefault(color, new HashSet<>());
         slotsOfCurColor.add(slot);
         slotsOfColor.put(color, slotsOfCurColor);
-        curCarSlotsList.add(slot);
-        slotsOfCar.put(registerPlateNo, curCarSlotsList);
         status.put(slot, registerPlateNo+"         "+color);
         System.out.println("Allocated slot number: "+slot);
     }
@@ -67,9 +69,24 @@ class ParkingLot{
             System.out.println("the slot is empty one, leaving from empty slot is invalid");
             return;
         }
+        List<String> registrationNoAndColor = ParkingTicketSystemV2.trimAndSplitCommand(status.get(slot));
+        String registrationNo = registrationNoAndColor.get(0);
+        String color = registrationNoAndColor.get(1);
+
+        Car leavingCar = cars.get(registrationNo);
+        leavingCar.setSlot(null);
+
+        HashSet<String> carsOfCurColor = carsOfColor.get(color);
+        carsOfCurColor.remove(registrationNo);
+        carsOfColor.put(color, carsOfCurColor);
+
+        HashSet<Integer> slotsOfCurColor = slotsOfColor.get(color);
+        slotsOfCurColor.remove(slot);
+        slotsOfColor.put(color, slotsOfCurColor);
 
         status.remove(slot);
         slots.add(slot);
+
         System.out.println("Slot number "+ slot + " is free");
     }
 
@@ -86,8 +103,6 @@ class ParkingLot{
 
     public void printNumberPlatesWithColor(String color){
         color = color.toUpperCase();
-//        System.out.println(color);
-//        System.out.println("carsOfColor: "+carsOfColor);
 
         if(!carsOfColor.containsKey(color)){
             System.out.println("No Car of This Color is Present in Our Parkinglot");
@@ -96,19 +111,21 @@ class ParkingLot{
         for(String registrationNo : carsOfColor.get(color)) System.out.println(registrationNo);
     }
 
-    public void printSlotsOfCar(String registrationNo){
-        if(!slotsOfCar.containsKey(registrationNo)){
+    public void printSlotOfCar(String registrationNo){
+
+        if(!cars.containsKey(registrationNo)){
             System.out.println("This Car With registrationNo: "+registrationNo+" is never parked at our parkinglot");
             return;
         }
-        System.out.println(slotsOfCar.get(registrationNo));
+        if(cars.get(registrationNo).getSlot()==null){
+            System.out.println("This Car With registrationNo: "+registrationNo+" is currently not parked at our parkinglot");
+            return;
+        }
+        System.out.println("current slot of car with registrationNo: "+"registrationNo is: "+cars.get(registrationNo).getSlot());
     }
 
     public void printSlotsWithCarColor(String color){
         color = color.toUpperCase();
-//        System.out.println(color);
-//        System.out.println("slotsOfColor: "+slotsOfColor);
-
         if(!slotsOfColor.containsKey(color)){
             System.out.println("No Car of this Color: " + color +" is parked with us");
             return;
@@ -123,7 +140,7 @@ class ParkingLot{
 }
 
 
-public class ParkingTicketSystem{
+public class ParkingTicketSystemV2{
     private static final String STATUS = "STATUS";
     private static final String EXIT = "EXIT";
     private static final String PARK = "PARK";
@@ -131,7 +148,7 @@ public class ParkingTicketSystem{
     private static final String LEAVE = "LEAVE";
     private static final String REGISTRATION_NUMBERS_FOR_CARS_WITH_COLOUR = "REGISTRATION_NUMBERS_FOR_CARS_WITH_COLOUR";
     private static final String SLOTS_ALLOTED_TO_CARS_WITH_COLOUR = "SLOTS_ALLOTED_TO_CARS_WITH_COLOUR";
-    private static final String SLOTS_ALLOTED_TO_CAR_WITH_REGISTRATIONNO = "SLOTS_ALLOTED_TO_CAR_WITH_REGISTRATIONNO";
+    private static final String SLOT_ALLOTED_TO_CAR_WITH_REGISTRATIONNO = "SLOT_ALLOTED_TO_CAR_WITH_REGISTRATIONNO";
 
 
 
@@ -148,7 +165,7 @@ public class ParkingTicketSystem{
             if(command.toUpperCase().equals(EXIT)) return;
             cmdParts = trimAndSplitCommand(command);
         }
-        ParkingLot parkingLot = new ParkingLot(Integer.valueOf(cmdParts.get(1)));
+        ParkingLotV2 parkingLot = new ParkingLotV2(Integer.valueOf(cmdParts.get(1)));
 
         boolean expectCommand = true;
         System.out.println("You are in parkinglot of capacity: "+parkingLot.getCapacity());
@@ -175,8 +192,8 @@ public class ParkingTicketSystem{
                 case SLOTS_ALLOTED_TO_CARS_WITH_COLOUR:
                     parkingLot.printSlotsWithCarColor(cmdParts.get(1));
                     break;
-                case SLOTS_ALLOTED_TO_CAR_WITH_REGISTRATIONNO:
-                    parkingLot.printSlotsOfCar(cmdParts.get(1));
+                case SLOT_ALLOTED_TO_CAR_WITH_REGISTRATIONNO:
+                    parkingLot.printSlotOfCar(cmdParts.get(1));
                     break;
                 case INVALID:
                     System.out.println("INVALID COMMAND ENTERED.YOU ARE IN THE PARKINGLOT,BELOW ARE THE VALID COMMANDS");
@@ -193,7 +210,7 @@ public class ParkingTicketSystem{
         System.out.println(STATUS);
         System.out.println(REGISTRATION_NUMBERS_FOR_CARS_WITH_COLOUR+" colour");
         System.out.println(SLOTS_ALLOTED_TO_CARS_WITH_COLOUR+" colour");
-        System.out.println(SLOTS_ALLOTED_TO_CAR_WITH_REGISTRATIONNO+" registrationNo");
+        System.out.println(SLOT_ALLOTED_TO_CAR_WITH_REGISTRATIONNO+" registrationNo");
     }
 
     public static String getCommandType(List<String> cmdParts) {
@@ -217,7 +234,7 @@ public class ParkingTicketSystem{
         switch(cmdParts.get(0).toUpperCase()){
             case REGISTRATION_NUMBERS_FOR_CARS_WITH_COLOUR: return REGISTRATION_NUMBERS_FOR_CARS_WITH_COLOUR;
             case SLOTS_ALLOTED_TO_CARS_WITH_COLOUR: return SLOTS_ALLOTED_TO_CARS_WITH_COLOUR;
-            case SLOTS_ALLOTED_TO_CAR_WITH_REGISTRATIONNO: return SLOTS_ALLOTED_TO_CAR_WITH_REGISTRATIONNO;
+            case SLOT_ALLOTED_TO_CAR_WITH_REGISTRATIONNO: return SLOT_ALLOTED_TO_CAR_WITH_REGISTRATIONNO;
             default: return INVALID;
         }
     }
@@ -256,39 +273,59 @@ public class ParkingTicketSystem{
 
 
 
+//below is the demo output
 
 
 
 
 
+// Welcome Admin
+// create_parking_lot 6
+// You are in parkinglot of capacity: 6
+// PLEASE ENTER THE COMMAND
+// park KA-01-HH-1234 White
+// Allocated slot number: 1
+// PLEASE ENTER THE COMMAND
+// park KA-01-HH-9999 White
+// Allocated slot number: 2
+// PLEASE ENTER THE COMMAND
+// park KA-01-BB-0001 Black
+// Allocated slot number: 3
+// PLEASE ENTER THE COMMAND
+// park KA-01-HH-7777 Red
+// Allocated slot number: 4
+// PLEASE ENTER THE COMMAND
+// park KA-01-HH-2701 Blue
+// Allocated slot number: 5
+// PLEASE ENTER THE COMMAND
+// park KA-01-HH-3141 Black
+// Allocated slot number: 6
+// PLEASE ENTER THE COMMAND
+// leave 4
+// Slot number 4 is free
+// PLEASE ENTER THE COMMAND
+// status
+// Slot     Registration No   Colour
+// 1   KA-01-HH-1234         WHITE
+// 2   KA-01-HH-9999         WHITE
+// 3   KA-01-BB-0001         BLACK
+// 5   KA-01-HH-2701         BLUE
+// 6   KA-01-HH-3141         BLACK
+// PLEASE ENTER THE COMMAND
+// park KA-01-P-333 White
+// Allocated slot number: 4
+// PLEASE ENTER THE COMMAND
+// park DL-12-AA-9999 White
+// Sorry, parking lot is full
+// PLEASE ENTER THE COMMAND
+// registration_numbers_for_cars_with_colour White
+// KA-01-HH-1234
+// KA-01-HH-9999
+// KA-01-P-333
+// PLEASE ENTER THE COMMAND
+// exit
 
-//    $ create_parking_lot 6
-//        Created a parking lot with 6 slots
-//        $ park KA-01-HH-1234 White
-//        Allocated slot number: 1
-//        $ park KA-01-HH-9999 White
-//        Allocated slot number: 2
-//            $ park KA-01-BB-0001 Black
-//        Allocated slot number: 3
-//        $ park KA-01-HH-7777 Red
-//        Allocated slot number: 4
-//        $ park KA-01-HH-2701 Blue
-//        Allocated slot number: 5
-//        $ park KA-01-HH-3141 Black
-//        Allocated slot number: 6
-//        $ leave 4
-//        Slot number 4 is free
-//        $ status
-//        Slot No. Registration No Colour
-//        1 KA-01-HH-1234 White
-//        2 KA-01-HH-9999 White
-//        3 KA-01-BB-0001 Black
-//        5 KA-01-HH-2701 Blue
-//        6 KA-01-HH-3141 Black
-//        $ park KA-01-P-333 White
-//        Allocated slot number: 4
-//        $ park DL-12-AA-9999 White
-//        Sorry, parking lot is full
-//        $ registration_numbers_for_cars_with_colour White KA-01-HH-1234, KA-01-HH-9999, KA-01-P-333
-//        $ exit
+
+// ...Program finished with exit code 0
+// Press ENTER to exit console.
 

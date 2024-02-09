@@ -37,7 +37,7 @@ How to run:
                                                       b)ParkingTicketSystemV2.java
     3)now in your terminal navigate to greenstitch folder, now by doing ls, You must be able to see  ParkingTicketSystem.java and ParkingTicketSystemV2.java
 
-    4)now complile the java file you want to run by below command
+    4)now complile and execute  the java file you want to run by below command
          javac ParkingTicketSystem.java
          java ParkingTicketSystem
 

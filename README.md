@@ -4,13 +4,16 @@ ParkingLotAssignment
 I have recieved this assignment from Greenstitch.io.The Deadline is 10  FEB 2024 12PM.
 
 The code responds to 7 different commands
-  createParkingLot
-  park
-  un-park
-  status
-  carsOfGivenColor
-  SlotsOfGivenColor
+  createParkingLot,
+  park,
+  un-park,
+  status,
+  carsOfGivenColor,
+  SlotsOfGivenColor,
   slot/slots of a given Car
+
+
+
 
 Ambiguity in Assignment:
    the Assignment didnt mention if we have to consider all the cars that are currently present in parking lot
@@ -20,6 +23,9 @@ Ambiguity in Assignment:
 so i have coded:
              ParkingTicketSystem.java(Assuming i have to consider all cars, including those which left the parkinglot)
              ParkingTicketSystemV2.java (Assuming i have to cinsider only cars that are currently present in the parkinglot)
+
+
+
 
 
 

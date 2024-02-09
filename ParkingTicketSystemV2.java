@@ -170,7 +170,7 @@ public class ParkingTicketSystemV2{
         boolean expectCommand = true;
         System.out.println("You are in parkinglot of capacity: "+parkingLot.getCapacity());
         while(expectCommand){
-            System.out.println("PLEASE ENTER THE COMMAND");
+            System.out.println("PLEASE ENTER THE COMMAND::");
             command = scanner.nextLine();
             if(command.toUpperCase().equals(EXIT)) return;
 

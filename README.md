@@ -98,7 +98,7 @@ How to run:
                 // exit
 
     5)similarly for ParkingTicketSystemV2
-        javac ParkingTicketSystemv2.java
+        javac ParkingTicketSystemV2.java
         java ParkingTicketSystemV2
         demo output:
             // Welcome Admin
@@ -154,4 +154,10 @@ How to run:
 
         6)if u face difficulty in doing through terminal, you can simply copy paste the code into a online compiler and see results
           please refer demoOutput for available commands
+
+
+
+Update from Arpit Samdani:
+        i have enquired with arpit about ambiguity and got to know that we should consider only currentlyParkedCars,so i request the evaluation team to consider my
+         ParkingTicketSystemV2.java file
                      

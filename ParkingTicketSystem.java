@@ -1,3 +1,6 @@
+//please consider ParkingTicketSystemV2
+//ParkingTicketSystem considers all the cars(including those cars that left the parkinglot)
+//ParkingTicketSystemV2 consider only those cars that are currently present in the parkinglot
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;

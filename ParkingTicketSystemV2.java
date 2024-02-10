@@ -49,7 +49,7 @@ class ParkingLotV2{
         return slot;
     }
 
-    public void parkACar(String registerPlateNo, String color){
+    public synchronized void parkACar(String registerPlateNo, String color){
         Integer slot = generateslot();
         if(slot==null) {
             System.out.println("Sorry, parking lot is full");
@@ -68,7 +68,7 @@ class ParkingLotV2{
         System.out.println("Allocated slot number: "+slot);
     }
 
-    public void unParkAcar(Integer slot){
+    public synchronized void unParkAcar(Integer slot){
         if(!status.containsKey(slot)) {
             System.out.println("the slot is empty one, leaving from empty slot is invalid");
             return;

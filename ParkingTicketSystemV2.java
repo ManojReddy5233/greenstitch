@@ -39,6 +39,8 @@ class ParkingLotV2{
     private final ReadWriteLock carsLock = new ReentrantReadWriteLock();
     private final ReadWriteLock carsOfColorLock = new ReentrantReadWriteLock();
     private final ReadWriteLock slotsOfColorLock = new ReentrantReadWriteLock();
+    private final int MAXRETRY = 5;
+    private final int SLEEPTIME = 100;
 
     public ParkingLotV2(int capacity){
         this.capacity = capacity;
@@ -57,8 +59,12 @@ class ParkingLotV2{
         return slot;
     }
 
-    public  void parkACar(String registerPlateNo, String color){
-        acquireAllWriteLocks();
+    public  void parkACar(String registerPlateNo, String color) throws InterruptedException {
+        boolean lockAcquired = acquireAllWriteLocks();
+        if(!lockAcquired){
+            System.out.println("we are facing heavy laod, please try again later");
+            return;
+        }
         try{
             if(printSlotOfCar(registerPlateNo)){
                 System.out.println("this car is already parked in the parkingLot, The request is invalid");
@@ -85,8 +91,12 @@ class ParkingLotV2{
         }
     }
 
-    public  void unParkAcar(Integer slot){
-        acquireAllWriteLocks();
+    public  void unParkAcar(Integer slot) throws InterruptedException {
+        boolean lockAcquired = acquireAllWriteLocks();
+        if(!lockAcquired){
+            System.out.println("we are facing heavy laod, please try again later");
+            return;
+        }
         try {
             if(!status.containsKey(slot)) {
                 System.out.println("the slot is empty one, leaving from empty slot is invalid");
@@ -116,12 +126,56 @@ class ParkingLotV2{
         }
     }
 
-    private void acquireAllWriteLocks(){
+    private boolean acquireAllWriteLocks() throws InterruptedException {
         slotsLock.writeLock().lock();
         statusLock.writeLock().lock();
         carsLock.writeLock().lock();
         carsOfColorLock.writeLock().lock();
         slotsOfColorLock.writeLock().lock();
+        int totalLocks = 5;
+        int acquiredlocks = 0;
+        int retryCnt=0;
+        boolean slotsLockAcq = false;
+        boolean statusLockAcq = false;
+        boolean carsLockAcq = false;
+        boolean carsOfColorLockAcq = false;
+        boolean slotsOfColorLockAcq = false;
+        while((acquiredlocks<5)&&(retryCnt<MAXRETRY)){
+            if(!slotsLockAcq){
+                slotsLockAcq = slotsLock.writeLock().tryLock();
+                if(slotsLockAcq) acquiredlocks++;
+            }
+
+            if(!statusLockAcq){
+                statusLockAcq = statusLock.writeLock().tryLock();
+                if(statusLockAcq) acquiredlocks++;
+            }
+
+            if(!carsLockAcq){
+                carsLockAcq = carsLock.writeLock().tryLock();
+                if(carsLockAcq) acquiredlocks++;
+            }
+
+            if(!carsOfColorLockAcq){
+                carsOfColorLockAcq = carsOfColorLock.writeLock().tryLock();
+                if(carsOfColorLockAcq) acquiredlocks++;
+            }
+
+            if(!slotsOfColorLockAcq){
+                slotsOfColorLockAcq = slotsOfColorLock.writeLock().tryLock();
+                if(slotsOfColorLockAcq) acquiredlocks++;
+            }
+
+            Thread.sleep(SLEEPTIME);
+        }
+        if(acquiredlocks==5) return true;
+        if(slotsLockAcq) slotsLock.writeLock().unlock();
+        if(statusLockAcq) slotsLock.writeLock().unlock();
+        if(carsLockAcq) carsLock.writeLock().unlock();
+        if(carsOfColorLockAcq) carsOfColorLock.writeLock().unlock();
+        if(slotsOfColorLockAcq) slotsOfColorLock.writeLock().unlock();
+
+        return false;
     }
 
     private void unlockAllWriteLocks(){
@@ -215,7 +269,7 @@ public class ParkingTicketSystemV2{
 
 
 
-    public static void main(String[] args){
+    public static void main(String[] args) throws InterruptedException {
         System.out.println("Welcome Admin");
         Scanner scanner = new Scanner(System.in);
         String command = scanner.nextLine();

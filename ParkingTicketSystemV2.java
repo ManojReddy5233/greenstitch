@@ -3,6 +3,8 @@
 //ParkingTicketSystemV2 consider only those cars that are currently present in the parkinglot
 
 import java.util.*;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 class Car{
@@ -32,6 +34,12 @@ class ParkingLotV2{
     private HashMap<String, HashSet<String>> carsOfColor;  //stores all cars register no of a given color
     private HashMap<String, HashSet<Integer>> slotsOfColor;  //stores all slots againsr a given color
 
+    private final ReadWriteLock statusLock = new ReentrantReadWriteLock();
+    private final ReadWriteLock slotsLock = new ReentrantReadWriteLock();
+    private final ReadWriteLock carsLock = new ReentrantReadWriteLock();
+    private final ReadWriteLock carsOfColorLock = new ReentrantReadWriteLock();
+    private final ReadWriteLock slotsOfColorLock = new ReentrantReadWriteLock();
+
     public ParkingLotV2(int capacity){
         this.capacity = capacity;
         this.slots = IntStream.rangeClosed(1, capacity+1)
@@ -49,92 +57,142 @@ class ParkingLotV2{
         return slot;
     }
 
-    public synchronized void parkACar(String registerPlateNo, String color){
-        Integer slot = generateslot();
-        if(slot==null) {
-            System.out.println("Sorry, parking lot is full");
-            return;
+    public  void parkACar(String registerPlateNo, String color){
+        acquireAllWriteLocks();
+        try{
+            if(printSlotOfCar(registerPlateNo)){
+                System.out.println("this car is already parked in the parkingLot, The request is invalid");
+                return;
+            }
+            Integer slot = generateslot();
+            if(slot==null) {
+                System.out.println("Sorry, parking lot is full");
+                return;
+            }
+            color = color.toUpperCase();
+            slots.remove(slot);
+            cars.put(registerPlateNo, new Car(registerPlateNo, color, slot));
+            HashSet<String> carsOfCurColor = carsOfColor.getOrDefault(color, new HashSet<>());
+            carsOfCurColor.add(registerPlateNo);
+            carsOfColor.put(color, carsOfCurColor);
+            HashSet<Integer> slotsOfCurColor = slotsOfColor.getOrDefault(color, new HashSet<>());
+            slotsOfCurColor.add(slot);
+            slotsOfColor.put(color, slotsOfCurColor);
+            status.put(slot, registerPlateNo+"         "+color);
+            System.out.println("Allocated slot number: "+slot);
+        }finally {
+            unlockAllWriteLocks();
         }
-        color = color.toUpperCase();
-        slots.remove(slot);
-        cars.put(registerPlateNo, new Car(registerPlateNo, color, slot));
-        HashSet<String> carsOfCurColor = carsOfColor.getOrDefault(color, new HashSet<>());
-        carsOfCurColor.add(registerPlateNo);
-        carsOfColor.put(color, carsOfCurColor);
-        HashSet<Integer> slotsOfCurColor = slotsOfColor.getOrDefault(color, new HashSet<>());
-        slotsOfCurColor.add(slot);
-        slotsOfColor.put(color, slotsOfCurColor);
-        status.put(slot, registerPlateNo+"         "+color);
-        System.out.println("Allocated slot number: "+slot);
     }
 
-    public synchronized void unParkAcar(Integer slot){
-        if(!status.containsKey(slot)) {
-            System.out.println("the slot is empty one, leaving from empty slot is invalid");
-            return;
+    public  void unParkAcar(Integer slot){
+        acquireAllWriteLocks();
+        try {
+            if(!status.containsKey(slot)) {
+                System.out.println("the slot is empty one, leaving from empty slot is invalid");
+                return;
+            }
+            List<String> registrationNoAndColor = ParkingTicketSystemV2.trimAndSplitCommand(status.get(slot));
+            String registrationNo = registrationNoAndColor.get(0);
+            String color = registrationNoAndColor.get(1);
+
+            Car leavingCar = cars.get(registrationNo);
+            leavingCar.setSlot(null);
+
+            HashSet<String> carsOfCurColor = carsOfColor.get(color);
+            carsOfCurColor.remove(registrationNo);
+            carsOfColor.put(color, carsOfCurColor);
+
+            HashSet<Integer> slotsOfCurColor = slotsOfColor.get(color);
+            slotsOfCurColor.remove(slot);
+            slotsOfColor.put(color, slotsOfCurColor);
+
+            status.remove(slot);
+            slots.add(slot);
+
+            System.out.println("Slot number "+ slot + " is free");
+        }finally {
+            unlockAllWriteLocks();
         }
-        List<String> registrationNoAndColor = ParkingTicketSystemV2.trimAndSplitCommand(status.get(slot));
-        String registrationNo = registrationNoAndColor.get(0);
-        String color = registrationNoAndColor.get(1);
+    }
 
-        Car leavingCar = cars.get(registrationNo);
-        leavingCar.setSlot(null);
+    private void acquireAllWriteLocks(){
+        slotsLock.writeLock().lock();
+        statusLock.writeLock().lock();
+        carsLock.writeLock().lock();
+        carsOfColorLock.writeLock().lock();
+        slotsOfColorLock.writeLock().lock();
+    }
 
-        HashSet<String> carsOfCurColor = carsOfColor.get(color);
-        carsOfCurColor.remove(registrationNo);
-        carsOfColor.put(color, carsOfCurColor);
-
-        HashSet<Integer> slotsOfCurColor = slotsOfColor.get(color);
-        slotsOfCurColor.remove(slot);
-        slotsOfColor.put(color, slotsOfCurColor);
-
-        status.remove(slot);
-        slots.add(slot);
-
-        System.out.println("Slot number "+ slot + " is free");
+    private void unlockAllWriteLocks(){
+        slotsLock.writeLock().unlock();
+        statusLock.writeLock().unlock();
+        carsLock.writeLock().unlock();
+        carsOfColorLock.writeLock().unlock();
+        slotsOfColorLock.writeLock().unlock();
     }
 
     public void printStatus(){
-        if(status.isEmpty()) {
-            System.out.println("All Slots Are Free");
-            return;
-        }
-        System.out.println("Slot     Registration No   Colour");
-        for(Integer slot=1; slot<=capacity; slot++){
-            if(status.containsKey(slot)) System.out.println(slot+ "   "+status.get(slot));
+        statusLock.readLock().lock();
+        try{
+            if(status.isEmpty()) {
+                System.out.println("All Slots Are Free");
+                return;
+            }
+            System.out.println("Slot     Registration No   Colour");
+            for(Integer slot=1; slot<=capacity; slot++){
+                if(status.containsKey(slot)) System.out.println(slot+ "   "+status.get(slot));
+            }
+        }finally {
+            statusLock.readLock().unlock();
         }
     }
 
     public void printNumberPlatesWithColor(String color){
-        color = color.toUpperCase();
+        carsOfColorLock.readLock().lock();
+        try{
+            color = color.toUpperCase();
 
-        if(!carsOfColor.containsKey(color)){
-            System.out.println("No Car of This Color is Present in Our Parkinglot");
-            return;
+            if(!carsOfColor.containsKey(color)){
+                System.out.println("No Car of This Color is Present in Our Parkinglot");
+                return;
+            }
+            for(String registrationNo : carsOfColor.get(color)) System.out.println(registrationNo);
+        }finally {
+            carsOfColorLock.readLock().unlock();
         }
-        for(String registrationNo : carsOfColor.get(color)) System.out.println(registrationNo);
     }
 
-    public void printSlotOfCar(String registrationNo){
-
-        if(!cars.containsKey(registrationNo)){
-            System.out.println("This Car With registrationNo: "+registrationNo+" is never parked at our parkinglot");
-            return;
+    public boolean printSlotOfCar(String registrationNo){
+        carsLock.readLock().lock();
+        try {
+            if(!cars.containsKey(registrationNo)){
+                System.out.println("This Car With registrationNo: "+registrationNo+" is never parked at our parkinglot");
+                return false;
+            }
+            if(cars.get(registrationNo).getSlot()==null){
+                System.out.println("This Car With registrationNo: "+registrationNo+" is currently not parked at our parkinglot");
+                return false;
+            }
+            System.out.println("current slot of car with registrationNo: "+registrationNo+ " is: "+cars.get(registrationNo).getSlot());
+            return true;
+        }finally {
+            carsLock.readLock().unlock();
         }
-        if(cars.get(registrationNo).getSlot()==null){
-            System.out.println("This Car With registrationNo: "+registrationNo+" is currently not parked at our parkinglot");
-            return;
-        }
-        System.out.println("current slot of car with registrationNo: "+"registrationNo is: "+cars.get(registrationNo).getSlot());
     }
 
     public void printSlotsWithCarColor(String color){
-        color = color.toUpperCase();
-        if(!slotsOfColor.containsKey(color)){
-            System.out.println("No Car of this Color: " + color +" is parked with us");
-            return;
+        slotsOfColorLock.readLock().lock();
+        try {
+            color = color.toUpperCase();
+            if(!slotsOfColor.containsKey(color)){
+                System.out.println("No Car of this Color: " + color +" is parked with us");
+                return;
+            }
+            System.out.println(slotsOfColor.get(color));
+        }finally {
+            slotsOfColorLock.readLock().unlock();
         }
-        System.out.println(slotsOfColor.get(color));
     }
 
     public int getCapacity() {

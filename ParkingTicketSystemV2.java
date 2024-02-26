@@ -170,7 +170,7 @@ class ParkingLotV2{
         }
         if(acquiredlocks==5) return true;
         if(slotsLockAcq) slotsLock.writeLock().unlock();
-        if(statusLockAcq) slotsLock.writeLock().unlock();
+       if (statusLockAcq) statusLock.writeLock().unlock()
         if(carsLockAcq) carsLock.writeLock().unlock();
         if(carsOfColorLockAcq) carsOfColorLock.writeLock().unlock();
         if(slotsOfColorLockAcq) slotsOfColorLock.writeLock().unlock();

@@ -127,11 +127,6 @@ class ParkingLotV2{
     }
 
     private boolean acquireAllWriteLocks() throws InterruptedException {
-        slotsLock.writeLock().lock();
-        statusLock.writeLock().lock();
-        carsLock.writeLock().lock();
-        carsOfColorLock.writeLock().lock();
-        slotsOfColorLock.writeLock().lock();
         int totalLocks = 5;
         int acquiredlocks = 0;
         int retryCnt=0;
